@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Department Preference System</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F8F7F4;
+    --card: #FFFFFF;
+    --primary: #1A1A1A;
+    --secondary: #6B6B6B;
+    --border: #E0DED8;
+    --sel-bg: #F0EEE8;
+    --bar-bg: #E8E6E0;
+    --hero-bg: #1A1A2E;
+    --hero-fg: #FFFFFF;
+    --hero-sub: #A8B2C8;
+    --chip-bg: #2A2A45;
+    --chip-fg: #7EB8F7;
+    --accent: #4F7EF7;
+    --card2-bg: #F0F4FF;
+    --green: #22c55e;
+    --red: #ef4444;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--primary); }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── HERO (Start) ── */
+  .hero { background: var(--hero-bg); padding: 60px 24px 50px; text-align: center; position: relative; overflow: hidden; }
+  .hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; border: 2px solid #2E2E50; }
+  .hero::before { width: 300px; height: 300px; top: -80px; right: -80px; }
+  .hero::after  { width: 200px; height: 200px; bottom: -60px; left: -60px; }
+  .hero-title { font-size: 38px; font-weight: 700; color: var(--hero-fg); line-height: 1.2; margin-bottom: 28px; }
+  .highlights { display: inline-flex; flex-direction: column; gap: 10px; margin: 0 auto 32px; text-align: left; position: relative; z-index: 1; }
+  .hl-row { background: var(--chip-bg); padding: 12px 20px; display: flex; align-items: center; gap: 14px; border-radius: 8px; }
+  .hl-sym { font-size: 16px; font-weight: 700; min-width: 20px; }
+  .hl-txt { color: var(--hero-fg); font-size: 14px; }
+  .cta-row { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+  .btn-start { background: var(--accent); color: #fff; border: none; padding: 14px 36px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .15s; }
+  .btn-start:hover { background: #3A66D4; }
+  .cta-note { color: var(--hero-sub); font-size: 13px; }
+
+  .bottom-info { background: var(--bg); padding: 32px 24px; text-align: center; flex: 1; }
+  .stats-row { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 28px; }
+  .stat-num { font-size: 26px; font-weight: 700; }
+  .stat-lbl { font-size: 11px; color: var(--secondary); margin-top: 2px; }
+  .steps-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .step-box { background: var(--card2-bg); padding: 12px 18px; border-radius: 8px; text-align: center; }
+  .step-num { font-size: 16px; font-weight: 700; color: var(--accent); }
+  .step-txt { font-size: 11px; color: var(--primary); margin-top: 4px; line-height: 1.4; }
+  .step-arr { color: var(--secondary); font-size: 18px; }
+  .disclaimer { font-size: 11px; color: var(--secondary); font-style: italic; }
+
+  /* ── INFO SCREEN ── */
+  .info-screen { justify-content: center; align-items: center; padding: 40px 24px; }
+  .info-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 40px 36px; max-width: 440px; width: 100%; }
+  .info-card h2 { font-size: 22px; margin-bottom: 6px; }
+  .info-card p { color: var(--secondary); font-size: 13px; margin-bottom: 28px; }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--secondary); }
+  .field input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; font-size: 14px; outline: none; transition: border .15s; }
+  .field input:focus { border-color: var(--accent); }
+  .btn-primary { width: 100%; background: var(--primary); color: #fff; border: none; padding: 13px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn-primary:hover { opacity: .85; }
+
+  /* ── QUIZ SCREEN ── */
+  .quiz-wrap { max-width: 680px; margin: 0 auto; padding: 24px 20px; flex: 1; width: 100%; }
+  .prog-bar-wrap { background: var(--bar-bg); border-radius: 99px; height: 5px; margin-bottom: 16px; overflow: hidden; }
+  .prog-bar-fill { height: 100%; background: var(--primary); border-radius: 99px; transition: width .3s; }
+  .quiz-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .quiz-counter { font-size: 13px; color: var(--secondary); }
+  .nav-btns { display: flex; gap: 8px; }
+  .nav-btn { background: var(--card); border: 1px solid var(--border); border-radius: 7px; padding: 5px 12px; font-size: 12px; color: var(--secondary); cursor: pointer; }
+  .nav-btn:hover { background: var(--sel-bg); }
+  .nav-btn:disabled { opacity: .35; cursor: default; }
+  .q-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 16px; }
+  .q-prefix { font-size: 12px; color: var(--secondary); margin-bottom: 6px; }
+  .q-text { font-size: 16px; font-weight: 600; line-height: 1.5; }
+  .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .opt-btn { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 12px 16px; text-align: left; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all .12s; }
+  .opt-btn:hover { background: var(--sel-bg); }
+  .opt-btn.selected { border: 2px solid var(--primary); }
+  .opt-dot { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .opt-btn.selected .opt-dot { background: var(--primary); border-color: var(--primary); }
+  .opt-btn.selected .opt-dot::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #fff; display: block; }
+  .quiz-bot { display: flex; justify-content: space-between; align-items: center; }
+  .grid-btn { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 13px; color: var(--secondary); cursor: pointer; }
+  .grid-btn:hover { background: var(--sel-bg); }
+  .btn-next { background: var(--primary); color: #fff; border: none; padding: 11px 26px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-next:hover { opacity: .85; }
+  .btn-next:disabled { opacity: .35; cursor: default; }
+
+  /* ── GRID MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .modal-box { background: var(--card); border-radius: 14px; padding: 28px 24px; max-width: 480px; width: 90%; }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .modal-sub { font-size: 12px; color: var(--secondary); margin-bottom: 16px; }
+  .q-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-bottom: 16px; }
+  .q-dot { border-radius: 5px; border: 1px solid var(--border); background: var(--bar-bg); font-size: 10px; color: var(--secondary); padding: 6px 0; text-align: center; cursor: pointer; }
+  .q-dot.answered { background: var(--card); border-color: var(--border); color: var(--primary); font-weight: 600; }
+  .q-dot.current { border: 2px solid var(--primary); color: var(--primary); font-weight: 700; }
+  .modal-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--secondary); }
+  .legend-dot { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); }
+  .btn-close { width: 100%; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 9px; font-size: 13px; color: var(--secondary); cursor: pointer; }
+
+  /* ── RESULT SCREEN ── */
+  .result-wrap { max-width: 680px; margin: 0 auto; padding: 32px 20px; flex: 1; width: 100%; }
+  .result-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .result-sub { font-size: 13px; color: var(--secondary); margin-bottom: 24px; }
+  .section-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .score-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .score-name { font-size: 13px; color: var(--secondary); width: 170px; flex-shrink: 0; }
+  .score-bar-bg { flex: 1; background: var(--bar-bg); border-radius: 99px; height: 7px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 99px; background: var(--primary); }
+  .score-val { font-size: 13px; font-weight: 700; min-width: 32px; text-align: right; }
+  .dept-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 24px; }
+  .dept-item { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 11px 14px; }
+  .dept-item.top { border: 2px solid var(--primary); }
+  .dept-rank { font-size: 12px; color: var(--secondary); width: 22px; text-align: center; }
+  .dept-item.top .dept-rank { color: var(--primary); font-weight: 700; }
+  .dept-name { font-size: 14px; font-weight: 600; flex: 1; }
+  .dept-dist { font-size: 12px; color: var(--secondary); }
+
+  /* ── PREFERENCE SCREEN ── */
+  .pref-wrap { max-width: 780px; margin: 0 auto; padding: 32px 20px; flex: 1; width: 100%; }
+  .search-box { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .search-input { flex: 1; min-width: 200px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 14px; outline: none; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-results { background: var(--card); border: 1px solid var(--border); border-radius: 10px; max-height: 280px; overflow-y: auto; margin-bottom: 20px; }
+  .search-result-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: var(--sel-bg); }
+  .search-result-item .prog { font-weight: 600; }
+  .search-result-item .uni { color: var(--secondary); font-size: 12px; margin-top: 2px; }
+  .search-placeholder { padding: 24px; text-align: center; color: var(--secondary); font-size: 13px; }
+  .pref-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; min-height: 60px; }
+  .pref-item { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .pref-num { background: var(--accent); color: #fff; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .pref-info { flex: 1; }
+  .pref-prog { font-size: 14px; font-weight: 600; }
+  .pref-uni { font-size: 12px; color: var(--secondary); margin-top: 2px; }
+  .pref-move { display: flex; flex-direction: column; gap: 2px; }
+  .pref-move button { background: none; border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; font-size: 11px; cursor: pointer; color: var(--secondary); }
+  .pref-move button:hover { background: var(--sel-bg); }
+  .pref-del { background: none; border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; font-size: 13px; cursor: pointer; color: var(--red); margin-left: auto; }
+  .pref-del:hover { background: #fff0f0; }
+  .pref-empty { text-align: center; padding: 24px; color: var(--secondary); font-size: 13px; background: var(--card); border: 1px dashed var(--border); border-radius: 10px; }
+  .btn-submit { width: 100%; background: var(--green); color: #fff; border: none; padding: 14px; border-radius: 9px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .btn-submit:hover { opacity: .88; }
+  .btn-submit:disabled { opacity: .4; cursor: default; }
+  .pref-note { font-size: 12px; color: var(--secondary); text-align: center; margin-top: 10px; }
+
+  /* ── DONE SCREEN ── */
+  .done-screen { justify-content: center; align-items: center; text-align: center; padding: 40px 24px; }
+  .done-icon { font-size: 56px; margin-bottom: 16px; }
+  .done-title { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  .done-sub { color: var(--secondary); font-size: 14px; max-width: 380px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  SCREEN 1 — START                                       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="s-start" class="screen active">
+  <div class="hero">
+    <div class="hero-title">Find Your Perfect<br>Department.</div>
+    <div class="highlights">
+      <div class="hl-row">
+        <span class="hl-sym" style="color:#7EB8F7">?</span>
+        <span class="hl-txt">Not sure which field is right for you?</span>
+      </div>
+      <div class="hl-row">
+        <span class="hl-sym" style="color:#A8E6A3">✎</span>
+        <span class="hl-txt">Answer 60 short questions about yourself.</span>
+      </div>
+      <div class="hl-row">
+        <span class="hl-sym" style="color:#F7B97E">◎</span>
+        <span class="hl-txt">Discover the department that truly fits you.</span>
+      </div>
+    </div>
+    <div class="cta-row">
+      <button class="btn-start" onclick="goTo('s-info')">Start the Test →</button>
+      <span class="cta-note">Free · Takes ~5 min</span>
+    </div>
+  </div>
+  <div class="bottom-info">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num">60</div><div class="stat-lbl">Questions</div></div>
+      <div class="stat-card"><div class="stat-num">~5</div><div class="stat-lbl">Minutes</div></div>
+    </div>
+    <div class="steps-row">
+      <div class="step-box"><div class="step-num">1</div><div class="step-txt">Answer 60<br>questions</div></div>
+      <div class="step-arr">→</div>
+      <div class="step-box"><div class="step-num">2</div><div class="step-txt">Get your personality<br>scores</div></div>
+      <div class="step-arr">→</div>
+      <div class="step-box"><div class="step-num">3</div><div class="step-txt">Build your preference<br>list &amp; submit</div></div>
+    </div>
+    <div class="disclaimer">* This study has been prepared using the Big Five Inventory-2 (BFI-2).</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  SCREEN 2 — INFO (Name + Email)                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="s-info" class="screen info-screen">
+  <div class="info-card">
+    <h2>Let's get started</h2>
+    <p>Please enter your information before the test.</p>
+    <div class="field">
+      <label>Full Name</label>
+      <input type="text" id="inp-name" placeholder="e.g. Ahmet Yılmaz" oninput="checkInfo()">
+    </div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="inp-email" placeholder="e.g. ahmet@email.com" oninput="checkInfo()">
+    </div>
+    <button class="btn-primary" id="btn-info-next" disabled onclick="startQuiz()">Continue →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  SCREEN 3 — QUIZ                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="s-quiz" class="screen">
+  <div class="quiz-wrap">
+    <div class="prog-bar-wrap"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="quiz-top">
+      <span class="quiz-counter" id="q-counter">Question 1 / 60</span>
+      <div class="nav-btns">
+        <button class="nav-btn" id="btn-prev" onclick="goToQ(currentQ-1)" disabled>← Previous</button>
+        <button class="nav-btn" id="btn-skip" onclick="goToQ(currentQ+1)">Skip →</button>
+      </div>
+    </div>
+    <div class="q-card">
+      <div class="q-prefix">I am someone who…</div>
+      <div class="q-text" id="q-text"></div>
+    </div>
+    <div class="options" id="options"></div>
+    <div class="quiz-bot">
+      <button class="grid-btn" onclick="openGrid()">☰ Go to Question &nbsp;<span id="answered-count" style="font-weight:700">0/60</span></button>
+      <button class="btn-next" id="btn-next" onclick="nextQ()" disabled>Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  SCREEN 4 — RESULTS                                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="s-result" class="screen">
+  <div class="result-wrap">
+    <div class="result-title">Test Completed ✓</div>
+    <div class="result-sub">Your personality profile and department match are below.</div>
+    <div class="section-title">Your BFI-2 Scores</div>
+    <div id="score-bars"></div>
+    <hr class="divider">
+    <div class="section-title">Department Match <span style="font-weight:400;color:var(--secondary);font-size:13px">(closest to furthest)</span></div>
+    <div class="dept-list" id="dept-list"></div>
+    <button class="btn-primary" onclick="goTo('s-pref')" style="max-width:300px">Build My Preference List →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  SCREEN 5 — PREFERENCE LIST                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="s-pref" class="screen">
+  <div class="pref-wrap">
+    <div class="result-title">My Preference List</div>
+    <div class="result-sub" style="margin-bottom:20px">First select a university, then choose a program from that university.</div>
+
+    <!-- STEP 1: University -->
+    <div class="section-title">Step 1 — Select University</div>
+    <input class="search-input" id="uni-search" type="text"
+           placeholder="Type to search among 223 universities..."
+           oninput="filterUnis()" style="width:100%;margin-bottom:8px">
+    <div class="search-results" id="uni-results">
+      <div class="search-placeholder">Start typing to search universities...</div>
+    </div>
+
+    <!-- STEP 2: Program (hidden until uni selected) -->
+    <div id="prog-section" style="display:none">
+      <hr class="divider">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <div class="section-title" style="margin-bottom:0">Step 2 — Select Program</div>
+        <span id="selected-uni-badge" style="background:var(--card2-bg);color:var(--accent);font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px"></span>
+        <button onclick="clearUni()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;color:var(--secondary);cursor:pointer;">&#x2715; Change</button>
+      </div>
+      <input class="search-input" id="prog-search" type="text"
+             placeholder="Filter programs..." oninput="filterProgs()"
+             style="width:100%;margin-bottom:8px">
+      <div class="search-results" id="prog-results"></div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-title">My List <span id="pref-count" style="font-weight:400;color:var(--secondary);font-size:13px">(0 items)</span></div>
+    <div class="pref-list" id="pref-list">
+      <div class="pref-empty">No items yet. Select a university and program above.</div>
+    </div>
+
+    <button class="btn-submit" id="btn-submit" disabled onclick="submitPrefs()">Submit My Preference List</button>
+    <div class="pref-note">Your list will be saved and shared with the advisors.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  SCREEN 6 — DONE                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="s-done" class="screen done-screen">
+  <div class="done-icon">🎉</div>
+  <div class="done-title">Successfully Submitted!</div>
+  <div class="done-sub">Your preference list has been saved. Your advisor will review your results and get back to you soon.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  GRID MODAL                                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="grid-modal" class="modal-overlay" style="display:none" onclick="closeGridOutside(event)">
+  <div class="modal-box">
+    <div class="modal-title">Go to Question</div>
+    <div class="modal-sub">Answered ones are bold, the active question is highlighted.</div>
+    <div class="q-grid" id="q-grid"></div>
+    <div class="modal-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div> Active</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--card);border-color:var(--border)"></div> Answered</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--bar-bg)"></div> Not answered</div>
+    </div>
+    <button class="btn-close" onclick="closeGrid()">Close</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+
+const SORULAR = [
+  "is outgoing, sociable.","is compassionate, has a soft heart.","tends to be disorganized.",
+  "is relaxed, handles stress well.","has few artistic interests.","has an assertive personality.",
+  "is respectful, treats others with respect.","tends to be lazy.","stays optimistic after experiencing a setback.",
+  "is curious about many different things.","rarely feels excited or eager.","tends to find fault with others.",
+  "is dependable, steady.","is moody, has up and down mood swings.","is inventive, finds clever ways to do things.",
+  "tends to be quiet.","feels little sympathy for others.","is systematic, likes to keep things in order.",
+  "can be tense.","is fascinated by art, music, or literature.","is dominant, acts as a leader.",
+  "starts arguments with others.","has difficulty getting started on tasks.","feels secure, comfortable with self.",
+  "avoids intellectual, philosophical discussions.","is less active than other people.","has a forgiving nature.",
+  "can be somewhat careless.","is emotionally stable, not easily upset.","has little creativity.",
+  "is sometimes shy, introverted.","is helpful and unselfish with others.","keeps things neat and tidy.",
+  "worries a lot.","values art and beauty.","finds it hard to influence people.",
+  "is sometimes rude to others.","is efficient, gets things done.","often feels sad.",
+  "is complex, a deep thinker.","is full of energy.","is suspicious of others intentions.",
+  "is reliable, can always be counted on.","keeps their emotions under control.","has difficulty imagining things.",
+  "is talkative.","can be cold and uncaring.","leaves a mess, doesn't clean up.",
+  "rarely feels anxious or afraid.","thinks poetry and plays are boring.","prefers to have others take charge.",
+  "is polite, courteous to others.","is persistent, works until the task is finished.","tends to feel depressed, blue.",
+  "has little interest in abstract ideas.","shows a lot of enthusiasm.","assumes the best about people.",
+  "sometimes behaves irresponsibly.","is temperamental, gets emotional easily.","is original, comes up with new ideas."
+];
+
+const SCORING_KEYS = {
+  "Extraversion":          {std:[1,6,21,41,46,56],  rev:[11,16,26,31,36,51]},
+  "Agreeableness":         {std:[2,7,27,32,52,57],  rev:[12,17,22,37,42,47]},
+  "Conscientiousness":     {std:[13,18,33,38,43,53],rev:[3,8,23,28,48,58]},
+  "Negative Emotionality": {std:[14,19,34,39,54,59],rev:[4,9,24,29,44,49]},
+  "Open-Mindedness":       {std:[10,15,20,35,40,60],rev:[5,25,30,45,50,55]},
+};
+
+const BOLUM_SKORLARI = {
+  "Industrial Eng.":[3.52,3.49,3.76,2.53,3.44],"Mechanical Eng.":[3.31,3.39,3.58,2.62,3.39],
+  "Medicine":[3.58,3.33,3.29,2.81,3.06],"Chemical Eng.":[3.38,3.66,3.18,3.04,3.52],
+  "Civil Eng.":[3.97,3.90,3.80,2.39,4.05],"Electronics & Comm. Eng.":[3.42,3.65,3.48,2.71,3.86],
+  "Dentistry":[3.34,3.59,3.55,2.66,3.48],"Nursing":[2.41,2.71,2.71,2.67,2.46],
+  "Food Eng.":[3.83,3.52,3.39,2.76,3.57],"Economics":[3.33,3.48,3.02,3.13,3.65],
+  "Architecture":[3.46,3.46,2.79,3.09,3.75],"Computer Eng.":[3.48,4.04,3.96,2.09,3.98],
+  "Law":[3.68,3.79,3.65,2.31,3.76],
+};
+
+const BOLUM_AGIRLIKLARI = {
+  "Industrial Eng.":[1.32,1.72,1.49,1.64,1.54],"Mechanical Eng.":[1.43,1.85,1.65,1.79,2.20],
+  "Medicine":[1.34,1.67,1.75,1.04,1.28],"Chemical Eng.":[2.19,1.58,2.16,1.25,1.80],
+  "Civil Eng.":[1.91,1.39,1.11,1.45,1.80],"Electronics & Comm. Eng.":[1.34,2.39,1.60,2.17,2.46],
+  "Dentistry":[2.40,1.78,2.19,1.38,1.63],"Nursing":[1.80,1.89,1.83,1.99,2.35],
+  "Food Eng.":[2.14,1.71,2.42,1.69,1.16],"Economics":[1.60,2.14,1.61,1.28,1.81],
+  "Architecture":[2.22,1.04,0.92,1.23,2.35],"Computer Eng.":[1.53,1.81,0.84,0.91,2.32],
+  "Law":[1.43,4.47,1.21,1.05,2.89],
+};
+
+const OPTIONS = [
+  {label:"1", text:"Strongly disagree"},
+  {label:"2", text:"Disagree"},
+  {label:"3", text:"Neither agree nor disagree"},
+  {label:"4", text:"Agree"},
+  {label:"5", text:"Strongly agree"},
+];
+
+let YOKATLAS = [];
+// Load university/program data from data.json
+fetch("data.json")
+  .then(r => r.json())
+  .then(d => { YOKATLAS = d; })
+  .catch(() => alert("Could not load university data. Please refresh."));
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let studentName  = "";
+let studentEmail = "";
+let answers      = new Array(60).fill(null);
+let currentQ     = 0;
+let userScores   = [];
+let deptRanking  = [];
+let prefList     = [];
+
+// Google Apps Script Web App URL — replace with yours after deploy
+const SHEET_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+function goTo(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+// ── INFO SCREEN ───────────────────────────────────────────────────────────────
+function checkInfo() {
+  const n = document.getElementById("inp-name").value.trim();
+  const e = document.getElementById("inp-email").value.trim();
+  document.getElementById("btn-info-next").disabled = !(n && e.includes("@"));
+}
+
+function startQuiz() {
+  studentName  = document.getElementById("inp-name").value.trim();
+  studentEmail = document.getElementById("inp-email").value.trim();
+  answers      = new Array(60).fill(null);
+  currentQ     = 0;
+  goTo("s-quiz");
+  renderQ();
+}
+
+// ── QUIZ ──────────────────────────────────────────────────────────────────────
+function renderQ() {
+  const idx = currentQ;
+  const answered = answers.filter(a => a !== null).length;
+  document.getElementById("q-counter").textContent = `Question ${idx+1} / 60  •  ${answered}/60 answered`;
+  document.getElementById("prog-fill").style.width  = (idx/60*100) + "%";
+  document.getElementById("q-text").textContent     = SORULAR[idx];
+  document.getElementById("answered-count").textContent = `${answered}/60`;
+  document.getElementById("btn-prev").disabled = idx === 0;
+  document.getElementById("btn-skip").disabled = idx === 59;
+  document.getElementById("btn-next").textContent = idx === 59 ? "See Results →" : "Next →";
+  document.getElementById("btn-next").disabled    = answers[idx] === null;
+
+  const cont = document.getElementById("options");
+  cont.innerHTML = "";
+  OPTIONS.forEach((opt, i) => {
+    const val = i + 1;
+    const btn = document.createElement("button");
+    btn.className = "opt-btn" + (answers[idx] === val ? " selected" : "");
+    btn.innerHTML = `<span class="opt-dot"></span><span style="color:var(--secondary);min-width:14px">${opt.label}</span><span>${opt.text}</span>`;
+    btn.onclick = () => selectOpt(val);
+    cont.appendChild(btn);
+  });
+}
+
+function selectOpt(val) {
+  answers[currentQ] = val;
+  renderQ();
+}
+
+function goToQ(idx) {
+  if (idx < 0 || idx > 59) return;
+  currentQ = idx;
+  renderQ();
+}
+
+function nextQ() {
+  if (answers[currentQ] === null) return;
+  if (currentQ === 59) {
+    const missing = answers.indexOf(null);
+    if (missing !== -1) {
+      currentQ = missing;
+      renderQ();
+      alert(`Question ${missing+1} has not been answered yet. Please answer all questions.`);
+      return;
+    }
+    showResults();
+    return;
+  }
+  currentQ++;
+  renderQ();
+}
+
+// ── GRID MODAL ────────────────────────────────────────────────────────────────
+function openGrid() {
+  const grid = document.getElementById("q-grid");
+  grid.innerHTML = "";
+  for (let i = 0; i < 60; i++) {
+    const d = document.createElement("div");
+    d.className = "q-dot" + (answers[i] !== null ? " answered" : "") + (i === currentQ ? " current" : "");
+    d.style.background = i === currentQ ? "var(--primary)" : answers[i] !== null ? "var(--card)" : "var(--bar-bg)";
+    d.style.color = i === currentQ ? "#fff" : answers[i] !== null ? "var(--primary)" : "var(--secondary)";
+    d.textContent = i + 1;
+    d.onclick = () => { currentQ = i; renderQ(); closeGrid(); };
+    grid.appendChild(d);
+  }
+  document.getElementById("grid-modal").style.display = "flex";
+}
+function closeGrid() { document.getElementById("grid-modal").style.display = "none"; }
+function closeGridOutside(e) { if (e.target === document.getElementById("grid-modal")) closeGrid(); }
+
+// ── RESULTS ───────────────────────────────────────────────────────────────────
+function showResults() {
+  // Compute scores
+  const dims = Object.keys(SCORING_KEYS);
+  userScores = dims.map(dim => {
+    const k = SCORING_KEYS[dim];
+    let t = k.std.reduce((s,n) => s + answers[n-1], 0);
+    t    += k.rev.reduce((s,n) => s + (6 - answers[n-1]), 0);
+    return t / 12.0;
+  });
+
+  // Compute distances
+  deptRanking = Object.entries(BOLUM_SKORLARI).map(([dept, scores]) => {
+    const w = BOLUM_AGIRLIKLARI[dept];
+    const d = Math.sqrt(w.reduce((s,wi,i) => s + wi * Math.pow(userScores[i]-scores[i],2), 0));
+    return {dept, d};
+  }).sort((a,b) => a.d - b.d);
+
+  // Render score bars
+  const barsEl = document.getElementById("score-bars");
+  barsEl.innerHTML = "";
+  dims.forEach((dim, i) => {
+    const pct = ((userScores[i]-1)/4*100).toFixed(0);
+    barsEl.innerHTML += `
+      <div class="score-row">
+        <div class="score-name">${dim}</div>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${pct}%"></div></div>
+        <div class="score-val">${userScores[i].toFixed(2)}</div>
+      </div>`;
+  });
+
+  // Render dept list
+  const deptEl = document.getElementById("dept-list");
+  deptEl.innerHTML = "";
+  deptRanking.forEach((item, i) => {
+    deptEl.innerHTML += `
+      <div class="dept-item${i===0?" top":""}">
+        <div class="dept-rank">${i+1}</div>
+        <div class="dept-name">${item.dept}</div>
+        <div class="dept-dist">distance: ${item.d.toFixed(2)}</div>
+      </div>`;
+  });
+
+  goTo("s-result");
+}
+
+// ── PREFERENCE LIST ───────────────────────────────────────────────────────────
+
+// Build unique sorted university list once
+const UNI_LIST = [...new Set(YOKATLAS.map(r => r.uni))].sort((a,b) => a.localeCompare(b, 'tr'));
+
+let selectedUni = null;
+
+function filterUnis() {
+  const q   = document.getElementById("uni-search").value.trim().toLowerCase();
+  const el  = document.getElementById("uni-results");
+  if (q.length < 1) {
+    el.innerHTML = `<div class="search-placeholder">Start typing to search universities...</div>`;
+    return;
+  }
+  const hits = UNI_LIST.filter(u => u.toLowerCase().includes(q)).slice(0, 50);
+  if (!hits.length) {
+    el.innerHTML = `<div class="search-placeholder">No universities found.</div>`;
+    return;
+  }
+  el.innerHTML = hits.map((u, i) => `
+    <div class="search-result-item" onclick="selectUniByIndex(${i})">
+      <div class="prog">${u}</div>
+    </div>`).join("");
+  // store hits for safe access
+  window._uniHits = hits;
+}
+
+function selectUniByIndex(i) {
+  selectUni(window._uniHits[i]);
+}
+
+function selectUni(uni) {
+  selectedUni = uni;
+  // Hide uni search, show prog section
+  document.getElementById("uni-search").value = uni;
+  document.getElementById("uni-results").innerHTML = "";
+  document.getElementById("selected-uni-badge").textContent = uni;
+  document.getElementById("prog-section").style.display = "block";
+  document.getElementById("prog-search").value = "";
+  renderProgs("");
+  document.getElementById("prog-search").focus();
+}
+
+function clearUni() {
+  selectedUni = null;
+  document.getElementById("uni-search").value = "";
+  document.getElementById("uni-results").innerHTML = `<div class="search-placeholder">Start typing to search universities...</div>`;
+  document.getElementById("prog-section").style.display = "none";
+}
+
+function filterProgs() {
+  const q = document.getElementById("prog-search").value.trim().toLowerCase();
+  renderProgs(q);
+}
+
+function renderProgs(q) {
+  const el = document.getElementById("prog-results");
+  let progs = YOKATLAS.filter(r => r.uni === selectedUni);
+  if (q) progs = progs.filter(r => r.prog.toLowerCase().includes(q));
+  if (!progs.length) {
+    el.innerHTML = `<div class="search-placeholder">No programs found.</div>`;
+    return;
+  }
+  window._progHits = progs;
+  el.innerHTML = progs.map((r, i) => `
+    <div class="search-result-item" onclick="addPrefByIndex(${i})">
+      <div class="prog">${r.prog}</div>
+    </div>`).join("");
+}
+
+function addPrefByIndex(i) {
+  addPrefItem(window._progHits[i]);
+}
+
+function addPrefItem(item) {
+  const already = prefList.some(p => p.uni === item.uni && p.prog === item.prog);
+  if (already) { alert("This program is already in your list."); return; }
+  prefList.push({uni: item.uni, prog: item.prog});
+  renderPrefList();
+  // Reset to uni search so user can add another
+  clearUni();
+}
+
+function renderPrefList() {
+  const el = document.getElementById("pref-list");
+  document.getElementById("pref-count").textContent = `(${prefList.length} items)`;
+  document.getElementById("btn-submit").disabled = prefList.length === 0;
+
+  if (!prefList.length) {
+    el.innerHTML = `<div class="pref-empty">No items yet. Search and add programs above.</div>`;
+    return;
+  }
+  el.innerHTML = prefList.map((p, i) => `
+    <div class="pref-item">
+      <div class="pref-num">${i+1}</div>
+      <div class="pref-info">
+        <div class="pref-prog">${p.prog}</div>
+        <div class="pref-uni">${p.uni}</div>
+      </div>
+      <div class="pref-move">
+        <button onclick="moveUp(${i})" ${i===0?"disabled":""}>▲</button>
+        <button onclick="moveDown(${i})" ${i===prefList.length-1?"disabled":""}>▼</button>
+      </div>
+      <button class="pref-del" onclick="removePref(${i})">✕</button>
+    </div>`).join("");
+}
+
+function moveUp(i) {
+  if (i === 0) return;
+  [prefList[i-1], prefList[i]] = [prefList[i], prefList[i-1]];
+  renderPrefList();
+}
+function moveDown(i) {
+  if (i === prefList.length-1) return;
+  [prefList[i+1], prefList[i]] = [prefList[i], prefList[i+1]];
+  renderPrefList();
+}
+function removePref(i) {
+  prefList.splice(i, 1);
+  renderPrefList();
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────────
+async function submitPrefs() {
+  const btn = document.getElementById("btn-submit");
+  btn.disabled = true;
+  btn.textContent = "Submitting...";
+
+  const dims = Object.keys(SCORING_KEYS);
+  const payload = {
+    name:   studentName,
+    email:  studentEmail,
+    timestamp: new Date().toISOString(),
+    scores: Object.fromEntries(dims.map((d,i) => [d, userScores[i].toFixed(2)])),
+    deptRanking: deptRanking.map(r => `${r.dept} (${r.d.toFixed(2)})`).join(" | "),
+    preferences: prefList.map((p,i) => `${i+1}. ${p.prog} — ${p.uni}`).join("\n"),
+  };
+
+  try {
+    await fetch(SHEET_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload),
+    });
+    goTo("s-done");
+  } catch(e) {
+    alert("Connection error. Please try again.");
+    btn.disabled = false;
+    btn.textContent = "Submit My Preference List";
+  }
+}
+</script>
+</body>
+</html>
