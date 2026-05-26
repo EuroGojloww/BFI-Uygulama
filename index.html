@@ -274,20 +274,35 @@
 <div id="s-pref" class="screen">
   <div class="pref-wrap">
     <div class="result-title">My Preference List</div>
-    <div class="result-sub" style="margin-bottom:20px">Search for a university + program and add it to your list. Reorder as you wish.</div>
+    <div class="result-sub" style="margin-bottom:20px">First select a university, then choose a program from that university.</div>
 
-    <div class="section-title">Search University / Program</div>
-    <div class="search-box">
-      <input class="search-input" id="search-inp" type="text" placeholder="Type university or program name..." oninput="doSearch()">
+    <!-- STEP 1: University -->
+    <div class="section-title">Step 1 — Select University</div>
+    <input class="search-input" id="uni-search" type="text"
+           placeholder="Type to search among 223 universities..."
+           oninput="filterUnis()" style="width:100%;margin-bottom:8px">
+    <div class="search-results" id="uni-results">
+      <div class="search-placeholder">Start typing to search universities...</div>
     </div>
-    <div class="search-results" id="search-results">
-      <div class="search-placeholder">Start typing to search from 11,689 programs...</div>
+
+    <!-- STEP 2: Program (hidden until uni selected) -->
+    <div id="prog-section" style="display:none">
+      <hr class="divider">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <div class="section-title" style="margin-bottom:0">Step 2 — Select Program</div>
+        <span id="selected-uni-badge" style="background:var(--card2-bg);color:var(--accent);font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px"></span>
+        <button onclick="clearUni()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;color:var(--secondary);cursor:pointer;">&#x2715; Change</button>
+      </div>
+      <input class="search-input" id="prog-search" type="text"
+             placeholder="Filter programs..." oninput="filterProgs()"
+             style="width:100%;margin-bottom:8px">
+      <div class="search-results" id="prog-results"></div>
     </div>
 
     <hr class="divider">
     <div class="section-title">My List <span id="pref-count" style="font-weight:400;color:var(--secondary);font-size:13px">(0 items)</span></div>
     <div class="pref-list" id="pref-list">
-      <div class="pref-empty">No items yet. Search and add programs above.</div>
+      <div class="pref-empty">No items yet. Select a university and program above.</div>
     </div>
 
     <button class="btn-submit" id="btn-submit" disabled onclick="submitPrefs()">Submit My Preference List</button>
@@ -538,38 +553,66 @@ function showResults() {
 }
 
 // ── PREFERENCE LIST ───────────────────────────────────────────────────────────
-let searchTimer = null;
 
-function doSearch() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(_runSearch, 180);
+// Build unique sorted university list once
+const UNI_LIST = [...new Set(YOKATLAS.map(r => r.uni))].sort((a,b) => a.localeCompare(b, 'tr'));
+
+let selectedUni = null;
+
+function filterUnis() {
+  const q   = document.getElementById("uni-search").value.trim().toLowerCase();
+  const el  = document.getElementById("uni-results");
+  if (q.length < 1) {
+    el.innerHTML = `<div class="search-placeholder">Start typing to search universities...</div>`;
+    return;
+  }
+  const hits = UNI_LIST.filter(u => u.toLowerCase().includes(q)).slice(0, 50);
+  if (!hits.length) {
+    el.innerHTML = `<div class="search-placeholder">No universities found.</div>`;
+    return;
+  }
+  el.innerHTML = hits.map(u => `
+    <div class="search-result-item" onclick="selectUni(${JSON.stringify(u)})">
+      <div class="prog">${u}</div>
+    </div>`).join("");
 }
 
-function _runSearch() {
-  const q = document.getElementById("search-inp").value.trim().toLowerCase();
-  const el = document.getElementById("search-results");
-  if (q.length < 2) {
-    el.innerHTML = `<div class="search-placeholder">Type at least 2 characters...</div>`;
-    return;
-  }
-  const results = YOKATLAS.filter(r =>
-    r.uni.toLowerCase().includes(q) || r.prog.toLowerCase().includes(q)
-  ).slice(0, 40);
+function selectUni(uni) {
+  selectedUni = uni;
+  // Hide uni search, show prog section
+  document.getElementById("uni-search").value = uni;
+  document.getElementById("uni-results").innerHTML = "";
+  document.getElementById("selected-uni-badge").textContent = uni;
+  document.getElementById("prog-section").style.display = "block";
+  document.getElementById("prog-search").value = "";
+  renderProgs("");
+  document.getElementById("prog-search").focus();
+}
 
-  if (!results.length) {
-    el.innerHTML = `<div class="search-placeholder">No results found.</div>`;
+function clearUni() {
+  selectedUni = null;
+  document.getElementById("uni-search").value = "";
+  document.getElementById("uni-results").innerHTML = `<div class="search-placeholder">Start typing to search universities...</div>`;
+  document.getElementById("prog-section").style.display = "none";
+}
+
+function filterProgs() {
+  const q = document.getElementById("prog-search").value.trim().toLowerCase();
+  renderProgs(q);
+}
+
+function renderProgs(q) {
+  const el = document.getElementById("prog-results");
+  let progs = YOKATLAS.filter(r => r.uni === selectedUni);
+  if (q) progs = progs.filter(r => r.prog.toLowerCase().includes(q));
+  if (!progs.length) {
+    el.innerHTML = `<div class="search-placeholder">No programs found.</div>`;
     return;
   }
-  el.innerHTML = results.map((r, idx) => `
-    <div class="search-result-item" onclick="addPref(${idx})">
+  el.innerHTML = progs.map(r => `
+    <div class="search-result-item" onclick='addPrefItem(${JSON.stringify(r)})'>
       <div class="prog">${r.prog}</div>
-      <div class="uni">${r.uni}</div>
     </div>`).join("");
-
-  // store refs for click
-  el.querySelectorAll(".search-result-item").forEach((el2, i) => {
-    el2.onclick = () => addPrefItem(results[i]);
-  });
 }
 
 function addPrefItem(item) {
@@ -577,8 +620,8 @@ function addPrefItem(item) {
   if (already) { alert("This program is already in your list."); return; }
   prefList.push({uni: item.uni, prog: item.prog});
   renderPrefList();
-  document.getElementById("search-inp").value = "";
-  document.getElementById("search-results").innerHTML = `<div class="search-placeholder">Start typing to search from 11,689 programs...</div>`;
+  // Reset to uni search so user can add another
+  clearUni();
 }
 
 function renderPrefList() {
